@@ -14,8 +14,11 @@ function sigma_points(m::AbstractVector, P::AbstractMatrix; α=1e-3, κ=0.0)
     # Compute scaling parameter
     λ = α^2*(N+κ)-N
     
-    # Square root of cov
-    sP = sqrt(P)
+    # Square root of covariance matrix through Babylonian method
+    sP = zeros(eltype(m), N,N)
+    for _ in 1:10
+        sP = (sP + P*inv(sP)) / 2.0
+    end
     
     # Preallocate
     sigma = Matrix(undef,N,2N+1)
@@ -79,11 +82,11 @@ function UT(m::AbstractVector, P::AbstractMatrix, g; Q=nothing, D=1, α=1e-3, β
 
         # Compute moments of approximated distribution
         μ = y'*Wm
-        Σ = Wc[1]*(y[1] .- μ)*(y[1] .- μ)'
-        C = Wc[1]*(sp[:,1] .- m)*(y[1] .- μ)'
+        Σ = Wc[1]*(y[1] - μ)*(y[1] - μ)'
+        C = Wc[1]*(sp[:,1] - m)*(y[1] - μ)'
         for i = 2:2N+1
-            Σ += Wc[i]*(y[i] .- μ)*(y[i] .- μ)'
-            C += Wc[i]*(sp[:,i] .- m)*(y[i] .- μ)'
+            Σ += Wc[i]*(y[i] - μ)*(y[i] - μ)'
+            C += Wc[i]*(sp[:,i] - m)*(y[i] - μ)'
         end
         
         # # Compute moments of approximated distribution
