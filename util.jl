@@ -1,6 +1,35 @@
 using LinearAlgebra
 
 
+
+function polar2cart(z; l=1.0)
+    "Map angles to Cartesian space"
+
+    # Position of first mass
+    x = l*sin.(z[1])
+    y = l*-cos.(z[1])
+    
+    return (x,y)
+end
+
+function sqrtm(M::AbstractMatrix)
+    "https://en.wikipedia.org/wiki/Square_root_of_a_2_by_2_matrix"
+
+    if size(M) !== (2,2); error("Matrix must be 2x2"); end
+
+    A,C,B,D = M
+
+    # Determinant
+    δ = A*D - B*C
+    s = sqrt(δ)
+
+    # Trace
+    τ = A+D
+    t = sqrt(τ + 2s)
+
+    return 1/t*(M+s*Matrix{eltype(M)}(I,2,2))
+end
+
 function project2posdef!(S::AbstractMatrix)
     L,V = eigen(S)
     return V*diagm(max.(0.0,L))*V'
@@ -15,10 +44,7 @@ function sigma_points(m::AbstractVector, P::AbstractMatrix; α=1e-3, κ=0.0)
     λ = α^2*(N+κ)-N
     
     # Square root of covariance matrix through Babylonian method
-    sP = zeros(eltype(m), N,N)
-    for _ in 1:10
-        sP = (sP + P*inv(sP)) / 2.0
-    end
+    sP = sqrtm(P)
     
     # Preallocate
     sigma = Matrix(undef,N,2N+1)
