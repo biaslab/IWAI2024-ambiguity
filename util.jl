@@ -1,38 +1,57 @@
 using LinearAlgebra
 
 
-
-function polar2cart(z; l=1.0)
-    "Map angles to Cartesian space"
-
-    # Position of first mass
-    x = l*sin.(z[1])
-    y = l*-cos.(z[1])
-    
-    return (x,y)
-end
-
 function sqrtm(M::AbstractMatrix)
-    "https://en.wikipedia.org/wiki/Square_root_of_a_2_by_2_matrix"
+    "Square root of matrix"
 
-    if size(M) !== (2,2); error("Matrix must be 2x2"); end
+    if size(M) == (2,2)
+        "https://en.wikipedia.org/wiki/Square_root_of_a_2_by_2_matrix"
 
-    A,C,B,D = M
+        A,C,B,D = M
 
-    # Determinant
-    δ = A*D - B*C
-    s = sqrt(δ)
+        # Determinant
+        δ = A*D - B*C
+        s = sqrt(δ)
 
-    # Trace
-    τ = A+D
-    t = sqrt(τ + 2s)
+        # Trace
+        τ = A+D
+        t = sqrt(τ + 2s)
 
-    return 1/t*(M+s*Matrix{eltype(M)}(I,2,2))
+        return 1/t*(M+s*Matrix{eltype(M)}(I,2,2))
+    else
+        "Babylonian method"
+
+        Xk = Matrix{eltype(M)}(I,size(M))
+        Xm = zeros(eltype(M), size(M))
+
+        while sum(abs.(Xk[:] .- Xm[:])) > 1e-3
+            Xm = Xk
+            Xk = (Xm + M/Xm)/2.0
+        end
+        return Xk
+    end
 end
 
-function project2posdef!(S::AbstractMatrix)
+function proj2psd!(S::AbstractMatrix)
     L,V = eigen(S)
-    return V*diagm(max.(0.0,L))*V'
+    S = V*diagm(max.(1e-8,L))*V'
+    return (S+S')/2
+end
+
+function sigma_points(m::AbstractFloat, v::AbstractFloat; α=1e-3, κ=0.0)
+    
+    # Compute scaling parameter
+    λ = α^2*(1+κ)-1
+    
+    # Preallocate
+    sigma = zeros(eltype(m),3)
+    
+    # Sigma points
+    sigma[1] = m
+    sigma[2] = m + sqrt(1+λ)*sqrt(v)
+    sigma[3] = m - sqrt(1+λ)*sqrt(v)
+    
+    return sigma
 end
 
 function sigma_points(m::AbstractVector, P::AbstractMatrix; α=1e-3, κ=0.0)
@@ -85,6 +104,29 @@ function ut_weights(; α=1e-3, β=2.0, κ=0.0, N=1)
     return Wm,Wc
 end
 
+function UT(m::AbstractFloat, v::AbstractFloat, g; Q=nothing, α=1e-3, β=2.0, κ=0.0)
+    "Algorithm 5.12 in 'Bayesian filtering & smoothing'"
+    
+    # Compute constant weigths
+    Wm, Wc = ut_weights(α=α, β=β, κ=κ, N=1)
+    
+    # Form sigma points
+    sp = sigma_points(m,v, α=α, κ=κ)
+    y = g.(sp)
+
+    # Compute moments of approximated distribution
+    μ = y'*Wm
+    Σ = Wc[1]*(y[1] - μ)*(y[1] - μ)'
+    C = 0.0
+    for i = 2:3
+        Σ += Wc[i]*(y[i] - μ)*(y[i] - μ)'
+        C += Wc[i]*(sp[i] - m)*(y[i] - μ)'
+    end
+    
+    if Q !== nothing; Σ += Q; end
+    return μ,Σ,C
+end
+
 function UT(m::AbstractVector, P::AbstractMatrix, g; Q=nothing, D=1, α=1e-3, β=2.0, κ=0.0)
     "Algorithm 5.12 in 'Bayesian filtering & smoothing'"
     
@@ -114,11 +156,6 @@ function UT(m::AbstractVector, P::AbstractMatrix, g; Q=nothing, D=1, α=1e-3, β
             Σ += Wc[i]*(y[i] - μ)*(y[i] - μ)'
             C += Wc[i]*(sp[:,i] - m)*(y[i] - μ)'
         end
-        
-        # # Compute moments of approximated distribution
-        # μ = dot(y,Wm)
-        # Σ = sum([Wc[i]*(y[i] .- μ)*(y[i] .- μ)' for i in 1:(2N+1)])
-        # C = sum([Wc[i]*(sp[:,i] .- m)*(y[i] .- μ)' for i in 1:(2N+1)])
     else
         
         y = Matrix(undef, D,2N+1)
