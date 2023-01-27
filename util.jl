@@ -1,4 +1,5 @@
 using LinearAlgebra
+using ForwardDiff
 
 
 function sqrtm(M::AbstractMatrix)
@@ -175,4 +176,28 @@ function UT(m::AbstractVector, P::AbstractMatrix, g; Q=nothing, D=1, α=1e-3, β
     
     if Q !== nothing; Σ += Q; end
     return μ,Σ,C
+end
+
+function ET(m::AbstractFloat, v::AbstractFloat, g; Q=nothing)
+    
+    jm = ForwardDiff.derivative(g, m)
+    
+    mE = g(m)
+    SE = jm^2*v
+    CE = v*jm
+    
+    if Q !== nothing; SE += Q; end
+    return mE,SE,CE
+end
+
+function ET(m::AbstractVector, S::AbstractMatrix, g; Q=nothing)
+    
+    Jm = ForwardDiff.jacobian(g, m)
+    
+    mE = g(m)
+    SE = Jm*S*Jm'
+    CE = S*Jm'
+    
+    if Q !== nothing; SE += Q; end
+    return mE,SE,CE
 end
