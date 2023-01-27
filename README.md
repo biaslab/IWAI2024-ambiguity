@@ -1,2 +1,3 @@
-# ECC2023-efe4ukf
-Expected free energy minimization for unscented kalman filtering
+# UAI2023-UEFE
+
+Expected free energy minimization with unscented transform observations.
