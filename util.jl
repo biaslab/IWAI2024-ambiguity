@@ -105,30 +105,30 @@ function ut_weights(; α=1e-3, β=2.0, κ=0.0, N=1)
     return Wm,Wc
 end
 
-function UT(m::AbstractFloat, v::AbstractFloat, g; Q=nothing, α=1e-3, β=2.0, κ=0.0)
+function UT(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing, α=1e-3, β=2.0, κ=0.0)
     "Algorithm 5.12 in 'Bayesian filtering & smoothing'"
     
     # Compute constant weigths
     Wm, Wc = ut_weights(α=α, β=β, κ=κ, N=1)
     
     # Form sigma points
-    sp = sigma_points(m,v, α=α, κ=κ)
-    y = g.(sp)
+    σ = sigma_points(m,v, α=α, κ=κ)
+    y = g.(σ)
 
     # Compute moments of approximated distribution
     μ = y'*Wm
     Σ = Wc[1]*(y[1] - μ)*(y[1] - μ)'
-    C = 0.0
+    Γ = 0.0
     for i = 2:3
         Σ += Wc[i]*(y[i] - μ)*(y[i] - μ)'
-        C += Wc[i]*(sp[i] - m)*(y[i] - μ)'
+        Γ += Wc[i]*(σ[i] - m)*(y[i] - μ)'
     end
     
-    if Q !== nothing; Σ += Q; end
-    return μ,Σ,C
+    if addmatrix !== nothing; Σ += addmatrix; end
+    return μ,Σ,Γ
 end
 
-function UT(m::AbstractVector, P::AbstractMatrix, g; Q=nothing, D=1, α=1e-3, β=2.0, κ=0.0)
+function UT(m::AbstractVector, P::AbstractMatrix, g; addmatrix=nothing, D=1, α=1e-3, β=2.0, κ=0.0)
     "Algorithm 5.12 in 'Bayesian filtering & smoothing'"
     
     # Number of sigma points depends on dimensionality
@@ -138,7 +138,7 @@ function UT(m::AbstractVector, P::AbstractMatrix, g; Q=nothing, D=1, α=1e-3, β
     Wm, Wc = ut_weights(α=α, β=β, κ=κ, N=N)
     
     # Form sigma points
-    sp = sigma_points(m,P, α=α, κ=κ)
+    σ = sigma_points(m,P, α=α, κ=κ)
     
     # Propagate sigma points through non-linearity
     if D == 1
@@ -146,39 +146,39 @@ function UT(m::AbstractVector, P::AbstractMatrix, g; Q=nothing, D=1, α=1e-3, β
         # y = Vector{Real}(undef, 2N+1)
         y = zeros(eltype(m), 2N+1)
         for i in 1:(2N+1)
-            y[i] = g(sp[:,i])
+            y[i] = g(σ[:,i])
         end
 
         # Compute moments of approximated distribution
         μ = y'*Wm
         Σ = Wc[1]*(y[1] - μ)*(y[1] - μ)'
-        C = Wc[1]*(sp[:,1] - m)*(y[1] - μ)'
+        Γ = Wc[1]*(σ[:,1] - m)*(y[1] - μ)'
         for i = 2:2N+1
             Σ += Wc[i]*(y[i] - μ)*(y[i] - μ)'
-            C += Wc[i]*(sp[:,i] - m)*(y[i] - μ)'
+            Γ += Wc[i]*(σ[:,i] - m)*(y[i] - μ)'
         end
     else
         
         y = Matrix(undef, D,2N+1)
         for i in 1:(2N+1)
-            y[:,i] = g(sp[:,i])
+            y[:,i] = g(σ[:,i])
         end
         
         # Compute moments of approximated distribution
         μ = y*Wm
         Σ = zeros(eltype(m), D,D)
-        C = zeros(eltype(m), N,D)
+        Γ = zeros(eltype(m), N,D)
         for i = 1:2N+1
             Σ += Wc[i]*(y[:,i] - μ)*(y[:,i] - μ)'
-            C += Wc[i]*(sp[:,i] - m)*(y[:,i] - μ)'
+            Γ += Wc[i]*(σ[:,i] - m)*(y[:,i] - μ)'
         end
     end
     
-    if Q !== nothing; Σ += Q; end
-    return μ,Σ,C
+    if addmatrix !== nothing; Σ += addmatrix; end
+    return μ,Σ,Γ
 end
 
-function ET(m::AbstractFloat, v::AbstractFloat, g; Q=nothing)
+function ET(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
     
     jm = ForwardDiff.derivative(g, m)
     
@@ -186,11 +186,11 @@ function ET(m::AbstractFloat, v::AbstractFloat, g; Q=nothing)
     SE = jm^2*v
     CE = v*jm
     
-    if Q !== nothing; SE += Q; end
+    if addmatrix !== nothing; SE += addmatrix; end
     return mE,SE,CE
 end
 
-function ET(m::AbstractVector, S::AbstractMatrix, g; Q=nothing)
+function ET(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
     
     Jm = ForwardDiff.jacobian(g, m)
     
@@ -198,6 +198,6 @@ function ET(m::AbstractVector, S::AbstractMatrix, g; Q=nothing)
     SE = Jm*S*Jm'
     CE = S*Jm'
     
-    if Q !== nothing; SE += Q; end
+    if addmatrix !== nothing; SE += addmatrix; end
     return mE,SE,CE
 end
