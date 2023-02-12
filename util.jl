@@ -178,7 +178,7 @@ function UT(m::AbstractVector, P::AbstractMatrix, g; addmatrix=nothing, D=1, α=
     return μ,Σ,Γ
 end
 
-function ET(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
+function ET1(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
     
     jm = ForwardDiff.derivative(g, m)
     
@@ -190,11 +190,39 @@ function ET(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
     return mE,SE,CE
 end
 
-function ET(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
+function ET1(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
     
     Jm = ForwardDiff.jacobian(g, m)
     
     mE = g(m)
+    SE = Jm*S*Jm'
+    CE = S*Jm'
+    
+    if addmatrix !== nothing; SE += addmatrix; end
+    return mE,SE,CE
+end
+
+function ET2(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
+    
+    j(m) = ForwardDiff.derivative(g, m)
+    h(m) = ForwardDiff.derivative(j, m)
+    
+    mE = g(m) + 1/2*h(m)*v
+    SE = j(m)*v*j(m) + 1/2*(h(m)*v*h(m)*v)
+    CE = v*j(m)
+    
+    if addmatrix !== nothing; SE += addmatrix; end
+    return mE,SE,CE
+end
+
+function ET2(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
+    
+    J(m) = ForwardDiff.jacobian(g, m)
+    H(m) = ForwardDiff.hessian(g, m)
+
+    error("wam")
+    
+    mE = g(m) + 1/2
     SE = Jm*S*Jm'
     CE = S*Jm'
     
