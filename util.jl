@@ -118,7 +118,7 @@ function UT(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing, α=1e-3, �
     # Compute moments of approximated distribution
     μ = y'*Wm
     Σ = Wc[1]*(y[1] - μ)*(y[1] - μ)'
-    Γ = 0.0
+    Γ = Wc[1]*(σ[1] - m)*(y[1] - μ)'
     for i = 2:3
         Σ += Wc[i]*(y[i] - μ)*(y[i] - μ)'
         Γ += Wc[i]*(σ[i] - m)*(y[i] - μ)'
