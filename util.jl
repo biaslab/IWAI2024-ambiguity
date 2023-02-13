@@ -128,11 +128,12 @@ function UT(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing, α=1e-3, �
     return μ,Σ,Γ
 end
 
-function UT(m::AbstractVector, P::AbstractMatrix, g; addmatrix=nothing, D=1, α=1e-3, β=2.0, κ=0.0)
+function UT(m::AbstractVector, P::AbstractMatrix, g; addmatrix=nothing, α=1e-3, β=2.0, κ=0.0)
     "Algorithm 5.12 in 'Bayesian filtering & smoothing'"
-    
-    # Number of sigma points depends on dimensionality
-    N = size(P,2)
+
+    # Dimensionalities
+    D = length(g(m))
+    N = length(m)
     
     # Compute constant weigths
     Wm, Wc = ut_weights(α=α, β=β, κ=κ, N=N)
@@ -216,16 +217,42 @@ function ET2(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
 end
 
 function ET2(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
-    
-    J(m) = ForwardDiff.jacobian(g, m)
-    H(m) = ForwardDiff.hessian(g, m)
 
-    error("wam")
+    # Dimensionalities
+    M = length(m)
+    N = length(g(m))
     
-    mE = g(m) + 1/2
-    SE = Jm*S*Jm'
+    Jm = ForwardDiff.jacobian(g, m)
+
+    aux1 = zeros(eltype(m), N)
+    Hi = zeros(eltype(m), M,M,N)
+    for i in 1:N
+        g_i(x) = g(x)[i]
+        Hi[:,:,i] = ForwardDiff.hessian(g_i, m)
+
+        aux1 += e(i,N)*tr(Hi[:,:,i]*S)
+    end
+
+    # Auxiliary terms
+    aux2 = zeros(eltype(m), N,N)
+    for i in 1:N
+        for j in 1:N
+            aux2 += e(i,N)*e(j,N)'*tr(Hi[:,:,i]*S*Hi[:,:,j]*S)
+        end
+    end
+    
+    mE = g(m) + 1/2*aux1
+    SE = Jm*S*Jm' + 1/2*aux2
     CE = S*Jm'
     
     if addmatrix !== nothing; SE += addmatrix; end
     return mE,SE,CE
+end
+
+function e(i::Int64, n::Int64)
+    "Basis vector"
+    if i > n; error("IndexError: index larger than length of vector."); end
+    e = zeros(n)
+    e[i] = 1
+    return e
 end
