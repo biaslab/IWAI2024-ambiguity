@@ -221,29 +221,47 @@ function ET2(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
     # Dimensionalities
     M = length(m)
     N = length(g(m))
+
+    if N == 1
+
+        Jm = ForwardDiff.gradient(g, m)
+        Hm = ForwardDiff.hessian(g, m)
+        
+        # Auxiliary terms
+        aux1 = tr(Hm*S)
+        aux2 = tr(Hm*S*Hm*S)
+        
+        # Mean, variance and covariance
+        mE = g(m) + 1/2*aux1
+        SE = Jm'*S*Jm + 1/2*aux2
+        CE = S*Jm
+
+    else
     
-    Jm = ForwardDiff.jacobian(g, m)
+        Jm = ForwardDiff.jacobian(g, m)
 
-    aux1 = zeros(eltype(m), N)
-    Hi = zeros(eltype(m), M,M,N)
-    for i in 1:N
-        g_i(x) = g(x)[i]
-        Hi[:,:,i] = ForwardDiff.hessian(g_i, m)
+        aux1 = zeros(eltype(m), N)
+        Hi = zeros(eltype(m), M,M,N)
+        for i in 1:N
+            g_i(x) = g(x)[i]
+            Hi[:,:,i] = ForwardDiff.hessian(g_i, m)
 
-        aux1 += e(i,N)*tr(Hi[:,:,i]*S)
-    end
-
-    # Auxiliary terms
-    aux2 = zeros(eltype(m), N,N)
-    for i in 1:N
-        for j in 1:N
-            aux2 += e(i,N)*e(j,N)'*tr(Hi[:,:,i]*S*Hi[:,:,j]*S)
+            aux1 += e(i,N)*tr(Hi[:,:,i]*S)
         end
-    end
+
+        # Auxiliary terms
+        aux2 = zeros(eltype(m), N,N)
+        for i in 1:N
+            for j in 1:N
+                aux2 += e(i,N)*e(j,N)'*tr(Hi[:,:,i]*S*Hi[:,:,j]*S)
+            end
+        end
     
-    mE = g(m) + 1/2*aux1
-    SE = Jm*S*Jm' + 1/2*aux2
-    CE = S*Jm'
+        # Mean, variance and covariance
+        mE = g(m) + 1/2*aux1
+        SE = Jm*S*Jm' + 1/2*aux2
+        CE = S*Jm'
+    end
     
     if addmatrix !== nothing; SE += addmatrix; end
     return mE,SE,CE
