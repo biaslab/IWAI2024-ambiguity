@@ -216,7 +216,7 @@ function ET2(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
     return mE,SE,CE
 end
 
-function ET2(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
+function ET2(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing, forceHermitian=false)
 
     # Dimensionalities
     M = length(m)
@@ -264,6 +264,7 @@ function ET2(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
     end
     
     if addmatrix !== nothing; SE += addmatrix; end
+    if forceHermitian; SE = Hermitian(SE); end
     return mE,SE,CE
 end
 
