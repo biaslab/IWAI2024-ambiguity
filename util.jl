@@ -105,7 +105,7 @@ function ut_weights(; α=1e-3, β=2.0, κ=0.0, N=1)
     return Wm,Wc
 end
 
-function UT(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing, α=1e-3, β=2.0, κ=0.0)
+function UT(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing, forceHermitian=false, α=1e-3, β=2.0, κ=0.0)
     "Algorithm 5.12 in 'Bayesian filtering & smoothing'"
     
     # Compute constant weigths
@@ -125,10 +125,11 @@ function UT(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing, α=1e-3, �
     end
     
     if addmatrix !== nothing; Σ += addmatrix; end
+    if forceHermitian; Σ = Hermitian(Σ); end
     return μ,Σ,Γ
 end
 
-function UT(m::AbstractVector, P::AbstractMatrix, g; addmatrix=nothing, α=1e-3, β=2.0, κ=0.0)
+function UT(m::AbstractVector, P::AbstractMatrix, g; addmatrix=nothing, forceHermitian=false, α=1e-3, β=2.0, κ=0.0)
     "Algorithm 5.12 in 'Bayesian filtering & smoothing'"
 
     # Dimensionalities
@@ -176,6 +177,7 @@ function UT(m::AbstractVector, P::AbstractMatrix, g; addmatrix=nothing, α=1e-3,
     end
     
     if addmatrix !== nothing; Σ += addmatrix; end
+    if forceHermitian; Σ = Hermitian(Σ); end
     return μ,Σ,Γ
 end
 
