@@ -277,23 +277,3 @@ function e(i::Int64, n::Int64)
     e[i] = 1
     return e
 end
-
-function condition_yx(m,S, dims::Integer=1)
-    """
-    Conditioning a Gaussian distribution.
-
-    Appendix A(5), Särkkä (2013), Bayesian filtering & Smoothing.
-    """
-
-    m_a = m[1:dims]
-    m_b = m[dims+1:end]
-
-    S_A = S[1:dims, 1:dims]
-    S_B = S[dims+1:end, dims+1:end]
-    S_C = S[1:dims, dims+1:end]
-    
-    m_y(x) = m_b + S_C'*inv(S_A)*(x - m_a)
-    S_y(x) = S_B - S_C'*inv(S_A)*S_C
-    
-    return m_y, S_y
-end
