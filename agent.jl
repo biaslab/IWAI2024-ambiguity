@@ -10,9 +10,18 @@ function predict(m_kmin1, S_kmin1, u_kmin1, A,B,Q)
     return m_k_pred, S_k_pred
 end
 
-function correct_ET2(y_, m_k_pred, S_k_pred, g, R)
+function correct(y_, m_k_pred, S_k_pred, g, R; approx="ET2")
     "Correction step based on second-order Taylor approximation to nonlinear measurement"
-    μ, Σ, Γ = ET2(m_k_pred, S_k_pred, g, addmatrix=R, forceHermitian=true)
+    if approx == "ET1"
+        μ, Σ, Γ = ET1(m_k_pred, S_k_pred, g, addmatrix=R, forceHermitian=true)
+    elseif approx == "ET2"
+        μ, Σ, Γ = ET2(m_k_pred, S_k_pred, g, addmatrix=R, forceHermitian=true)
+    elseif approx == "UT"
+        μ, Σ, Γ = UT(m_k_pred, S_k_pred, g, addmatrix=R, forceHermitian=true)
+    else
+        error("Approximation method unknown.")
+    end
+
     m_k = m_k_pred .+ Γ*inv(Σ)*(y_[:,k] - μ)
     S_k = S_k_pred .- Γ*inv(Σ)*Γ'
     return m_k, S_k
