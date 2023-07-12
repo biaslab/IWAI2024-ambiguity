@@ -193,7 +193,7 @@ function ET1(m::AbstractFloat, v::AbstractFloat, g; addmatrix=nothing)
     return mE,SE,CE
 end
 
-function ET1(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
+function ET1(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing, forceHermitian=false)
     
     Jm = ForwardDiff.jacobian(g, m)
     
@@ -202,6 +202,7 @@ function ET1(m::AbstractVector, S::AbstractMatrix, g; addmatrix=nothing)
     CE = S*Jm'
     
     if addmatrix !== nothing; SE += addmatrix; end
+    if forceHermitian; SE = Hermitian(SE); end
     return mE,SE,CE
 end
 
