@@ -1,5 +1,6 @@
 using LinearAlgebra
 using Distributions
+
 include("util.jl")
 
 
@@ -71,7 +72,8 @@ function EFE(u::AbstractVector,
              state::Tuple{Vector{Float64}, Matrix{Float64}}, 
              goal::Tuple{Vector{Float64}, Matrix{Float64}}; 
              v_u::Float64=1.0,
-             time_horizon::Int64=1)
+             time_horizon::Int64=1,
+             approx="ET2")
     "Expected Free Energy"
 
     # Unpack parameters of current state
@@ -85,10 +87,18 @@ function EFE(u::AbstractVector,
         m_t = A*m_tmin1 + B*u[(t-1)*2+1:2t]
         S_t = A*S_tmin1*A' + Q
 
-        # Unscented transform moments
-        μ, Σ, Γ = ET2(m_t, S_t, g, addmatrix=R, forceHermitian=true)
+        # Gaussian approximation
+        if approx == "ET1"
+            μ, Σ, Γ = ET1(m_, S_t, g, addmatrix=R, forceHermitian=true)
+        elseif approx == "ET2"
+            μ, Σ, Γ = ET2(m_t, S_t, g, addmatrix=R, forceHermitian=true)
+        elseif approx == "UT"
+            μ, Σ, Γ = UT(m_t, S_t, g, addmatrix=R, forceHermitian=true)
+        else
+            error("Approximation method unknown.")
+        end
 
-        # Cumulate EFE
+        # Add to cumulative EFE
         cEFE += risk(μ,Σ, goal) + ambiguity(Σ,Γ, S_t) + 1/(v_u)*u[t]^2
 
         # Update state recursion
