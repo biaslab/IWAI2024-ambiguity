@@ -68,6 +68,23 @@ function risk(μ, Σ, goal)
     return 0.5(sum(M[:].^2) - k + norm(y,1).^2 + 2*sum([log(L1[i,i]./L0[i,i]) for i in 1:k]))
 end
 
+function evidence(y,m,S; approx="ET1")
+    "Marginal likelihood"
+    
+    # Gaussian approximation
+    if approx == "ET1"
+        μ, Σ, Γ = ET1(m_, S_t, g, addmatrix=R, forceHermitian=true)
+    elseif approx == "ET2"
+        μ, Σ, Γ = ET2(m_t, S_t, g, addmatrix=R, forceHermitian=true)
+    elseif approx == "UT"
+        μ, Σ, Γ = UT(m_t, S_t, g, addmatrix=R, forceHermitian=true)
+    else
+        error("Approximation method unknown.")
+    end
+
+    return pdf(MvNormal(μ, Matrix(Σ)), y)
+end
+
 function EFE(u::AbstractVector, 
              state::Tuple{Vector{Float64}, Matrix{Float64}}, 
              goal::Tuple{Vector{Float64}, Matrix{Float64}}; 
