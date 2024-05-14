@@ -125,3 +125,41 @@ function EFE(u::AbstractVector,
     end
     return cEFE
 end
+
+function planned_trajectory(policy, current_state; time_horizon=1, approx="ET2")
+    "Generate future states and observations"
+    
+    # Unpack parameters of current state
+    m_tmin1, S_tmin1 = current_state
+    
+    # Track predicted observations
+    z_m = zeros(4,  time_horizon)
+    z_S = zeros(4,4,time_horizon)
+    y_m = zeros(2,  time_horizon)
+    y_S = zeros(2,2,time_horizon)
+    
+    for t in 1:time_horizon
+        
+        # State transition
+        z_m[:,t] = A*m_tmin1 + B*policy[:,t]
+        z_S[:,:,t] = A*S_tmin1*A' + Q
+        
+        # Predicted observations
+        # Gaussian approximation
+        if approx == "ET1"
+            y_m[:,t], y_S[:,:,t] = ET1(z_m[:,t], z_S[:,:,t], g, addmatrix=R, forceHermitian=true)
+        elseif approx == "ET2"
+            y_m[:,t], y_S[:,:,t] = ET2(z_m[:,t], z_S[:,:,t], g, addmatrix=R, forceHermitian=true)
+        elseif approx == "UT"
+            y_m[:,t], y_S[:,:,t] = UT(z_m[:,t], z_S[:,:,t], g, addmatrix=R, forceHermitian=true)
+        else
+            error("Approximation method unknown.")
+        end
+        
+        # Update previous state
+        m_tmin1 = z_m[:,t]
+        S_tmin1 = z_S[:,:,t]
+        
+    end
+    return (z_m, z_S), (y_m, y_S)
+end
