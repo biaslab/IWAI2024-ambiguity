@@ -22,7 +22,7 @@ includet("../util.jl")
 
 """Experimental parameters"""
 
-num_reps = 3
+num_reps = 10
 
 # Time
 Δt = 0.2
@@ -34,12 +34,12 @@ len_horizon = 5;
 g(x::AbstractVector) = [sqrt(x[1]^2 + x[2]^2), atan(x[2],x[1])]
 
 # Goal
-z_star = [0.0, .5, 0.0, 0.0]
+z_star = [0.0, 1., 0.0, 0.0]
 goal = (g(z_star), 0.5diagm(ones(2)))
 
 # Parameters
 σ = 1e-3
-ρ = [1e-3, 1e-3]
+ρ = [1e-2, 1e-2]
 η = 0.0
 
 # Limits of controller
@@ -54,11 +54,11 @@ efeagent  = EFEAgent(goal, g, ρ, σ=σ; η=η, Δt=Δt, time_horizon=len_horizo
 mpcontrol = MPController(z_star, g, ρ, σ=σ; η=η, Δt=Δt, time_horizon=len_horizon)
 
 # Initial state
-z_0 = [0.0, -.5, 0., 0.]
+z_0 = [0.0, -1., 0., 0.]
 
 # Initial belief
 m_0 = z_0
-S_0 = 0.2diagm(ones(4));
+S_0 = 0.5diagm(ones(4));
 
 """ Run experiments """
 
@@ -147,7 +147,7 @@ for method in methods
      end
 
      # Write results of current method to file
-     jldsave("experiments/results/botnav-cart2polar-$method.jld2"; F, J, goal, Δt, len_trial, len_horizon, u_lims, η, z_0, m_0, S_0)
+     jldsave("experiments/results/botnav-cart2polar-$method.jld2"; F, J, goal, Δt, len_trial, len_horizon, u_lims, η, z_star, z_0, m_0, S_0)
 
 end
 
