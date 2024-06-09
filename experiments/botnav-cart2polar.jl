@@ -151,20 +151,3 @@ for method in methods
      jldsave("experiments/results/botnav-cart2polar-$method.jld2"; F, J, goal, Δt, len_trial, len_horizon, u_lims, η, z_star, s_star, z_0, m_0, S_0)
 
 end
-
-# xl = [-2., 2.]
-# yl = [-1.2, 2.8]
-# k = len_trial
-
-# p93 = plot(size=(500,500), legend=:topleft, aspect_ratio=:equal, ylabel="position y", xlabel="position x", xlims=xl, ylims=yl)
-# scatter!([0.0], [0.0], color="black", marker=:ltriangle, label="sensor station", markersize=8)
-# scatter!([z_0[1]], [z_0[2]], color="green", label="start state", markersize=8)
-# scatter!([z_star[1]], [z_star[2]], color="red", label="goal state", markersize=8)
-
-# plot!([z_sim[1,1:k]], [z_sim[2,1:k]], c="blue", marker=".", label="system states", alpha=1., markersize=5)
-
-# plot!(z_est[1][1,1:k], z_est[1][2,1:k], c="purple", marker=".", label="state estimates", alpha=1., markersize=5)
-# for j in 1:len_trial
-#     covellipse!(z_est[1][1:2,j], z_est[2][1:2,1:2,j], n_std=1, color="purple", linewidth=1, fillalpha=0.2)
-# end
-# plot!(dpi=300)
