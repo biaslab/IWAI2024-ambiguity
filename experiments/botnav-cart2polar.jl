@@ -26,7 +26,7 @@ num_reps = 10
 
 # Time
 Δt = 0.2
-len_trial = 20
+len_trial = 50
 tsteps = range(0, step=Δt, length=len_trial)
 len_horizon = 5;
 
@@ -35,7 +35,8 @@ g(x::AbstractVector) = [sqrt(x[1]^2 + x[2]^2), atan(x[2],x[1])]
 
 # Goal
 z_star = [0.0, 1., 0.0, 0.0]
-goal = (g(z_star), 0.5diagm(ones(2)))
+s_star = 0.1
+goal = (g(z_star), s_star*diagm(ones(2)))
 
 # Parameters
 σ = 1e-3
@@ -142,28 +143,28 @@ for method in methods
            end
 
           # Write results of current repetition to file
-          jldsave("experiments/results/botnav-cart2polar-$method-$nn.jld2"; F, J, z_est, z_sim, u_sim, y_sim, goal, Δt, len_trial, len_horizon, u_lims, η, z_0, m_0, S_0)
+          jldsave("experiments/results/botnav-cart2polar-$method-$nn.jld2"; F, J, z_est, z_sim, u_sim, y_sim, goal, Δt, len_trial, len_horizon, u_lims, η, z_star, s_star, z_0, m_0, S_0)
 
      end
 
      # Write results of current method to file
-     jldsave("experiments/results/botnav-cart2polar-$method.jld2"; F, J, goal, Δt, len_trial, len_horizon, u_lims, η, z_star, z_0, m_0, S_0)
+     jldsave("experiments/results/botnav-cart2polar-$method.jld2"; F, J, goal, Δt, len_trial, len_horizon, u_lims, η, z_star, s_star, z_0, m_0, S_0)
 
 end
 
-xl = [-2., 2.]
-yl = [-1.2, 2.8]
-k = len_trial
+# xl = [-2., 2.]
+# yl = [-1.2, 2.8]
+# k = len_trial
 
-p93 = plot(size=(500,500), legend=:topleft, aspect_ratio=:equal, ylabel="position y", xlabel="position x", xlims=xl, ylims=yl)
-scatter!([0.0], [0.0], color="black", marker=:ltriangle, label="sensor station", markersize=8)
-scatter!([z_0[1]], [z_0[2]], color="green", label="start state", markersize=8)
-scatter!([z_star[1]], [z_star[2]], color="red", label="goal state", markersize=8)
+# p93 = plot(size=(500,500), legend=:topleft, aspect_ratio=:equal, ylabel="position y", xlabel="position x", xlims=xl, ylims=yl)
+# scatter!([0.0], [0.0], color="black", marker=:ltriangle, label="sensor station", markersize=8)
+# scatter!([z_0[1]], [z_0[2]], color="green", label="start state", markersize=8)
+# scatter!([z_star[1]], [z_star[2]], color="red", label="goal state", markersize=8)
 
-plot!([z_sim[1,1:k]], [z_sim[2,1:k]], c="blue", marker=".", label="system states", alpha=1., markersize=5)
+# plot!([z_sim[1,1:k]], [z_sim[2,1:k]], c="blue", marker=".", label="system states", alpha=1., markersize=5)
 
-plot!(z_est[1][1,1:k], z_est[1][2,1:k], c="purple", marker=".", label="state estimates", alpha=1., markersize=5)
-for j in 1:len_trial
-    covellipse!(z_est[1][1:2,j], z_est[2][1:2,1:2,j], n_std=1, color="purple", linewidth=1, fillalpha=0.2)
-end
-plot!(dpi=300)
+# plot!(z_est[1][1,1:k], z_est[1][2,1:k], c="purple", marker=".", label="state estimates", alpha=1., markersize=5)
+# for j in 1:len_trial
+#     covellipse!(z_est[1][1:2,j], z_est[2][1:2,1:2,j], n_std=1, color="purple", linewidth=1, fillalpha=0.2)
+# end
+# plot!(dpi=300)
